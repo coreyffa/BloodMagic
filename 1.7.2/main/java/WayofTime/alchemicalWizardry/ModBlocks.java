@@ -52,6 +52,7 @@ public class ModBlocks
     public static Block blockSpellModifier;
     public static Block blockSpellEnhancement;
     public static Block blockSpectralContainer;
+    public static Block blockDemonPortal;
 
     public static void init()
     {
@@ -83,6 +84,7 @@ public class ModBlocks
         blockSpellModifier = new BlockSpellModifier();
         blockSpellEnhancement = new BlockSpellEnhancement();
         blockSpectralContainer = new BlockSpectralContainer();
+        blockDemonPortal = new BlockDemonPortal();
         
         blockLifeEssence = new LifeEssenceBlock();
     }
@@ -112,6 +114,7 @@ public class ModBlocks
         GameRegistry.registerBlock(ModBlocks.blockTeleposer, "blockTeleposer");
         GameRegistry.registerBlock(ModBlocks.spectralBlock, "spectralBlock");
         GameRegistry.registerBlock(ModBlocks.blockBloodLight, "bloodLight");
+        GameRegistry.registerBlock(ModBlocks.blockDemonPortal, "demonPortalMain");
         
         GameRegistry.registerBlock(ModBlocks.blockConduit,"blockConduit");
         GameRegistry.registerBlock(ModBlocks.blockSpellParadigm, ItemSpellParadigmBlock.class, "AlchemicalWizardry" + (ModBlocks.blockSpellParadigm.getUnlocalizedName()));
