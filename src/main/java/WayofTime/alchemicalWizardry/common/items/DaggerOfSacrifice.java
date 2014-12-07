@@ -22,6 +22,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 import WayofTime.alchemicalWizardry.AlchemicalWizardry;
+import WayofTime.alchemicalWizardry.common.IDemon;
+import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.IHoardDemon;
 import WayofTime.alchemicalWizardry.common.spell.complex.effect.SpellHelper;
 import WayofTime.alchemicalWizardry.common.tileEntity.TEAltar;
 
@@ -59,6 +61,11 @@ public class DaggerOfSacrifice extends EnergyItems
         {
             return false;
         }
+        
+        if(par2EntityLivingBase instanceof IHoardDemon)
+        {
+        	return false;
+        }
 
         if (par2EntityLivingBase.isChild() || par2EntityLivingBase instanceof EntityWither || par2EntityLivingBase instanceof EntityDragon || par2EntityLivingBase instanceof EntityPlayer || par2EntityLivingBase instanceof IBossDisplayData)
         {
@@ -72,6 +79,12 @@ public class DaggerOfSacrifice extends EnergyItems
             return false;
         }
 
+        if(par2EntityLivingBase instanceof IDemon)
+        {
+        	((IDemon)par2EntityLivingBase).setDropCrystal(false);
+        	this.findAndNotifyAltarOfDemon(world, par2EntityLivingBase);
+        }
+        
         if (par2EntityLivingBase instanceof EntityVillager && !par2EntityLivingBase.isChild())
         {
             if (findAndFillAltar(par2EntityLivingBase.worldObj, par2EntityLivingBase, 2000))
@@ -151,6 +164,8 @@ public class DaggerOfSacrifice extends EnergyItems
 
         if (findAndFillAltar(par2EntityLivingBase.worldObj, par2EntityLivingBase, 500))
         {
+            
+        	
             double posX = par2EntityLivingBase.posX;
             double posY = par2EntityLivingBase.posY;
             double posZ = par2EntityLivingBase.posZ;
@@ -200,7 +215,6 @@ public class DaggerOfSacrifice extends EnergyItems
     }
 
     @Override
-
     public Multimap getItemAttributeModifiers()
     {
         Multimap multimap = super.getItemAttributeModifiers();
@@ -208,6 +222,23 @@ public class DaggerOfSacrifice extends EnergyItems
         return multimap;
     }
 
+    public boolean findAndNotifyAltarOfDemon(World world, EntityLivingBase sacrifice)
+    {
+        int posX = (int) Math.round(sacrifice.posX - 0.5f);
+        int posY = (int) sacrifice.posY;
+        int posZ = (int) Math.round(sacrifice.posZ - 0.5f);
+        TEAltar altarEntity = this.getAltar(world, posX, posY, posZ);
+
+        if (altarEntity == null)
+        {
+            return false;
+        }
+
+        altarEntity.addToDemonBloodDuration(50);
+        
+        return true;
+    }
+    
     public boolean findAndFillAltar(World world, EntityLivingBase sacrifice, int amount)
     {
         int posX = (int) Math.round(sacrifice.posX - 0.5f);

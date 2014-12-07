@@ -25,7 +25,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 import WayofTime.alchemicalWizardry.AlchemicalWizardry;
 import WayofTime.alchemicalWizardry.ModItems;
-import WayofTime.alchemicalWizardry.common.EntityAITargetAggro;
+import WayofTime.alchemicalWizardry.common.EntityAITargetAggroCloaking;
 import WayofTime.alchemicalWizardry.common.Int3;
 import WayofTime.alchemicalWizardry.common.demonVillage.ai.EntityAIOccasionalRangedAttack;
 import WayofTime.alchemicalWizardry.common.demonVillage.ai.EntityDemonAIHurtByTarget;
@@ -62,8 +62,8 @@ public class EntityMinorDemonGrunt extends EntityDemon implements IOccasionalRan
         this.targetTasks.addTask(1, new EntityAIOwnerHurtByTarget(this));
         this.targetTasks.addTask(2, new EntityAIOwnerHurtTarget(this));
         this.targetTasks.addTask(3, new EntityDemonAIHurtByTarget(this, true));
-        this.targetTasks.addTask(4, new EntityAITargetAggro(this, EntityPlayer.class, 0, false));
-        this.setAggro(true);
+        this.targetTasks.addTask(4, new EntityAITargetAggroCloaking(this, EntityPlayer.class, 0, false, 0));
+        this.setAggro(false);
         this.setTamed(false);
         
         demonPortal = new Int3(0,0,0);
@@ -95,6 +95,34 @@ public class EntityMinorDemonGrunt extends EntityDemon implements IOccasionalRan
         {
             this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(this.maxUntamedHealth);
         }
+    }
+    
+    @Override
+    protected void dropFewItems(boolean par1, int par2)
+    {
+    	if(!this.getDoesDropCrystal())
+    	{
+    		ItemStack lifeShardStack = new ItemStack(ModItems.baseItems, 1, 28);
+            ItemStack soulShardStack = new ItemStack(ModItems.baseItems, 1, 29);
+            
+            int dropAmount = 0;
+            
+            for(int i=0; i<=par2; i++)
+            {
+            	dropAmount += this.worldObj.rand.nextFloat() < 0.6f ? 1 : 0;
+            }
+            
+            ItemStack drop = this.worldObj.rand.nextBoolean() ? lifeShardStack : soulShardStack;
+            drop.stackSize = dropAmount;
+
+            if(dropAmount > 0)
+            {
+                this.entityDropItem(drop, 0.0f);
+            }
+    	}else
+    	{
+    		super.dropFewItems(par1, par2);
+    	}
     }
     
     @Override
@@ -419,6 +447,12 @@ public class EntityMinorDemonGrunt extends EntityDemon implements IOccasionalRan
     public boolean attackEntityAsMob(Entity par1Entity)
     {
         int i = this.isTamed() ? 20 : 20;
+        
+        if(par1Entity instanceof IHoardDemon && ((IHoardDemon) par1Entity).isSamePortal(this))
+        {
+        	return false;
+        }
+        
         return par1Entity.attackEntityFrom(DamageSource.causeMobDamage(this), (float) i);
     }
     
@@ -428,6 +462,10 @@ public class EntityMinorDemonGrunt extends EntityDemon implements IOccasionalRan
     @Override
     public void attackEntityWithRangedAttack(EntityLivingBase par1EntityLivingBase, float par2)
     {
+    	if(par1EntityLivingBase instanceof IHoardDemon && ((IHoardDemon) par1EntityLivingBase).isSamePortal(this))
+        {
+        	return;
+        }
         double xCoord;
         double yCoord;
         double zCoord;

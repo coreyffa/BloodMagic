@@ -6,6 +6,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import WayofTime.alchemicalWizardry.ModBlocks;
 import WayofTime.alchemicalWizardry.common.Int3;
+import WayofTime.alchemicalWizardry.common.demonVillage.tileEntity.IRoadWard;
 import WayofTime.alchemicalWizardry.common.demonVillage.tileEntity.TEDemonPortal;
 
 public class DemonVillagePath
@@ -17,7 +18,7 @@ public class DemonVillagePath
     public int length;
     
     public static boolean canGoDown = true;
-    public static boolean tunnelIfObstructed = true;
+    public static boolean tunnelIfObstructed = false;
     public static boolean createBridgeInAirIfObstructed = false;
 
     public DemonVillagePath(int xi, int yi, int zi, ForgeDirection dir, int length)
@@ -42,6 +43,7 @@ public class DemonVillagePath
         for (int i = -rad; i <= rad; i++)
         {
             value = Math.max(this.constructPartialPath(portal, world, clearance, xPos - rad * dir.offsetX + i * dir.offsetZ, yPos, zPos - rad * dir.offsetZ + i * dir.offsetX, dir, length + 2 * rad, true), value);
+            if(TEDemonPortal.printDebug)
             System.out.println("" + (length + 2 * rad) + ", " + value + "");
         }
         
@@ -222,7 +224,7 @@ public class DemonVillagePath
 
     public boolean isBlockReplaceable(Block block)
     {
-        if (block.getMaterial() == Material.leaves || block.getMaterial() == Material.vine)
+        if (block.getMaterial() == Material.leaves || block.getMaterial() == Material.vine || block instanceof IRoadWard)
         {
             return false;
         }

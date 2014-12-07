@@ -15,6 +15,7 @@ import java.util.Random;
 import java.util.Set;
 
 import net.minecraft.block.Block;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -43,16 +44,20 @@ import com.google.gson.GsonBuilder;
 
 public class TEDemonPortal extends TileEntity
 {
+	public DemonType type = DemonType.FIRE;
+	
 	public static boolean printDebug = false;
+	
+	public static int limit = 100;
 	
     public static int buildingGridDelay = 25;
     public static int roadGridDelay = 10;
     public static int demonHoardDelay = 40;
-    public static float demonRoadChance = 0.6f;
+    public static float demonRoadChance = 0.3f;
     public static float demonHouseChance = 0.6f;
     public static float demonPortalChance = 0.5f;
-    public static float demonHoardChance = 1.0f;
-    public static float portalTickRate = 0.1f;
+    public static float demonHoardChance = 0.8f;
+    public static float portalTickRate = 1f;
 
     public static int[] tierCostList = new int[]{1000, 5000, 10000};
     
@@ -81,6 +86,8 @@ public class TEDemonPortal extends TileEntity
     public ForgeDirection nextDemonPortalDirection = ForgeDirection.DOWN;
     
     public int buildingStage = -1;
+    
+    public int delayBeforeParty = 0;
     
     public int lockdownTimer;
 
@@ -287,7 +294,10 @@ public class TEDemonPortal extends TileEntity
         {
             return;
         }
-
+        
+        DemonType[] types = DemonType.values();
+        this.type = types[rand.nextInt(types.length)];
+        
         for (int xIndex = -negXRadius; xIndex <= posXRadius; xIndex++)
         {
             for (int zIndex = -negZRadius; zIndex <= posZRadius; zIndex++)
@@ -313,29 +323,63 @@ public class TEDemonPortal extends TileEntity
         
         if (this.createRandomBuilding(DemonBuilding.BUILDING_PORTAL, tier) >= 1)
         {
+        	System.out.println("Portal building successfully found!");
         	this.buildingStage = 0;
         }
 
         isInitialized = true;
     }
+    
+    public void createParty()
+    {
+    	worldObj.createExplosion(null, xCoord + rand.nextInt(10) - rand.nextInt(10), yCoord, zCoord + rand.nextInt(10) - rand.nextInt(10), 5*rand.nextFloat(), false);
+    }
 
+    public void start()
+    {
+    	this.delayBeforeParty = 200;
+    }
+    
     /**
      * Randomly increase one of the cooldowns such that a road, house, or a demon portal tier is caused. Demons are also randomly spawned via this mechanic.
      */
     @Override
     public void updateEntity()
     {
+    	if(worldObj.isRemote)
+    	{
+    		return;
+    	}
+    	
+    	if(this.delayBeforeParty > 0)
+        {
+        	this.delayBeforeParty--;
+        	
+        	if(rand.nextInt(20) == 0)
+        	{
+            	this.createParty();
+        	}
+        	
+        	if(delayBeforeParty <= 0)
+        	{
+        		worldObj.createExplosion(null, xCoord, yCoord, zCoord, 15, false);
+        		this.initialize();
+        	}
+        	
+        	return;
+        }
+    	
         if (!isInitialized)
         {
             return;
         }
         
-        Math.max(0, this.lockdownTimer - 1);
+        lockdownTimer = Math.max(0, this.lockdownTimer - 1);
         this.incrementPoints();
         this.assignPoints();
         
         if(printDebug)
-        AlchemicalWizardry.logger.info("Roads: " + roadCooldown + " Buildings: " + houseCooldown);
+        AlchemicalWizardry.logger.info("Roads: " + roadCooldown + " Buildings: " + houseCooldown + " Lockdown: " + lockdownTimer);
 
         if(buildingStage >= 0 && buildingStage <=2)
         {
@@ -370,7 +414,7 @@ public class TEDemonPortal extends TileEntity
         
         if(this.demonHoardCooldown <= 0)
         {
-        	int complexityCost = this.createRandomDemonHoard(this, tier, DemonType.FIRE, this.isLockedDown());
+        	int complexityCost = this.createRandomDemonHoard(this, tier, this.type, this.isLockedDown());
         	if(complexityCost > 0)
         	{
         		this.demonHoardCooldown = TEDemonPortal.demonHoardDelay * complexityCost;
@@ -448,6 +492,8 @@ public class TEDemonPortal extends TileEntity
         
         this.pointPool = par1NBTTagCompound.getFloat("pointPool");
         this.lockdownTimer = par1NBTTagCompound.getInteger("lockdownTimer");
+        this.delayBeforeParty = par1NBTTagCompound.getInteger("delayBeforeParty");
+        this.type = DemonType.valueOf(par1NBTTagCompound.getString("demonType"));
     }
 
     @Override
@@ -497,6 +543,8 @@ public class TEDemonPortal extends TileEntity
         par1NBTTagCompound.setInteger("nextDemonPortalDirection", this.nextDemonPortalDirection.ordinal());
         par1NBTTagCompound.setFloat("pointPool", pointPool);
         par1NBTTagCompound.setInteger("lockdownTimer", this.lockdownTimer);
+        par1NBTTagCompound.setInteger("delayBeforeParty", delayBeforeParty);
+        par1NBTTagCompound.setString("demonType", this.type.toString());
     }
 
     public int createRandomDemonHoard(TEDemonPortal teDemonPortal, int tier, DemonType type, boolean spawnGuardian)
@@ -671,16 +719,16 @@ public class TEDemonPortal extends TileEntity
         return maxLength;
     }
 
-    public Int3 findRoadSpaceFromDirection(ForgeDirection dir, int amount)
+    public Int3 findRoadSpaceFromDirection(ForgeDirection dir, int amount) //TODO
     {
         int index = 0;
         if (dir == ForgeDirection.NORTH)
         {
         	if(printDebug)
             System.out.print("NORTH!");
-            for (int i = 0; i <= negZRadius + posZRadius; i++)
+            for (int i = Math.max(0, -limit + negZRadius); i <= negZRadius + Math.min(posZRadius, limit); i++)
             {
-                for (int j = 0; j <= negXRadius + posXRadius; j++)
+                for (int j = Math.max(0, -limit + negXRadius); j <= negXRadius + Math.min(posXRadius, limit); j++)
                 {
                     GridSpace space = area[j][i];
                     if (space.isRoadSegment())
@@ -695,9 +743,9 @@ public class TEDemonPortal extends TileEntity
             }
         } else if (dir == ForgeDirection.SOUTH)
         {
-            for (int i = negZRadius + posZRadius; i >= 0; i--)
+            for (int i = negZRadius + Math.min(posZRadius, limit); i >= Math.max(0, -limit + negZRadius); i--)
             {
-                for (int j = 0; j <= negXRadius + posXRadius; j++)
+                for (int j = Math.max(0, -limit + negXRadius); j <= negXRadius + Math.min(posXRadius, limit); j++)
                 {
                     GridSpace space = area[j][i];
                     if (space.isRoadSegment())
@@ -712,9 +760,9 @@ public class TEDemonPortal extends TileEntity
             }
         } else if (dir == ForgeDirection.EAST)
         {
-            for (int i = negXRadius + posXRadius; i >= 0; i--)
+            for (int i = negXRadius + Math.min(posXRadius, limit); i >= Math.max(0, -limit + negXRadius); i--)
             {
-                for (int j = 0; j <= negZRadius + posZRadius; j++)
+                for (int j = Math.max(0, -limit + negZRadius); j <= negZRadius + Math.min(posZRadius, limit); j++)
                 {
                     GridSpace space = area[i][j];
                     if (space.isRoadSegment())
@@ -729,9 +777,9 @@ public class TEDemonPortal extends TileEntity
             }
         } else if (dir == ForgeDirection.WEST)
         {
-            for (int i = 0; i <= negXRadius + posXRadius; i++)
+            for (int i = Math.max(0, -limit + negXRadius); i <= negXRadius + Math.min(posXRadius, limit); i++)
             {
-                for (int j = 0; j <= negZRadius + posZRadius; j++)
+                for (int j = Math.max(0, -limit + negZRadius); j <= negZRadius + Math.min(posZRadius, limit); j++)
                 {
                     GridSpace space = area[i][j];
                     if (space.isRoadSegment())
@@ -1170,10 +1218,11 @@ public class TEDemonPortal extends TileEntity
         {
             for (DemonBuilding build : TEDemonPortal.buildingList)
             {
-                if (build.buildingType != DemonBuilding.BUILDING_PORTAL)
+                if (build.buildingType != DemonBuilding.BUILDING_PORTAL || build.buildingTier != buildingTier)
                 {
                     continue;
                 }
+                System.out.println("This one matches!");
                 if (schemMap.containsKey(nextDir))
                 {
                     schemMap.get(nextDir).add(build);
@@ -1436,6 +1485,8 @@ public class TEDemonPortal extends TileEntity
     	{
     	case 0:
     		return rand.nextFloat() < 0.6 ? Blocks.cobblestone : Blocks.mossy_cobblestone;
+    	case 1:
+    		return Blocks.stonebrick;
     	default:
     		return Blocks.nether_brick;
     	}
@@ -1443,6 +1494,11 @@ public class TEDemonPortal extends TileEntity
 
     public int getRoadMeta()
     {
+    	switch(this.tier)
+    	{
+    	case 1:
+    		return rand.nextFloat() < 0.6 ? 1 : 0;
+    	}
         return 0;
     }
 
@@ -1504,4 +1560,15 @@ public class TEDemonPortal extends TileEntity
     {
         this.demonHouseCooldown += addition;
     }
+
+	public void notifyPortalOfBreak() 
+	{
+		for(IHoardDemon demon : hoardList)
+		{
+			if(demon instanceof Entity)
+			{
+				((Entity) demon).setDead();
+			}
+		}
+	}
 }
