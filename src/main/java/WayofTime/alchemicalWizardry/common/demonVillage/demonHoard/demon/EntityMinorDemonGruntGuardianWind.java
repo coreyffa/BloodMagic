@@ -9,18 +9,19 @@ import WayofTime.alchemicalWizardry.AlchemicalWizardry;
 import WayofTime.alchemicalWizardry.common.entity.projectile.WindGustProjectile;
 import WayofTime.alchemicalWizardry.common.spell.complex.effect.SpellHelper;
 
-public class EntityMinorDemonGruntWind extends EntityMinorDemonGrunt
+public class EntityMinorDemonGruntGuardianWind extends EntityMinorDemonGruntGuardian
 {
-	public EntityMinorDemonGruntWind(World par1World) 
+	public EntityMinorDemonGruntGuardianWind(World par1World) 
 	{
 		super(par1World);
-		this.setDemonID(AlchemicalWizardry.entityMinorDemonGruntWindID);
+		this.setDemonID(AlchemicalWizardry.entityMinorDemonGruntGuardianWindID);
 	}
-	
+
 	@Override
     public boolean attackEntityAsMob(Entity par1Entity)
     {
-        int i = this.isTamed() ? 20 : 20;
+        int i = this.isTamed() ? 25 : 25;
+        
         if(par1Entity instanceof IHoardDemon && ((IHoardDemon) par1Entity).isSamePortal(this))
         {
         	return false;
@@ -28,22 +29,25 @@ public class EntityMinorDemonGruntWind extends EntityMinorDemonGrunt
         
         if (par1Entity instanceof EntityPlayer)
         {
-            SpellHelper.setPlayerSpeedFromServer((EntityPlayer) par1Entity, par1Entity.motionX, par1Entity.motionY + 3, par1Entity.motionZ);
+            SpellHelper.setPlayerSpeedFromServer((EntityPlayer) par1Entity, par1Entity.motionX, par1Entity.motionY + 4, par1Entity.motionZ);
         } else if (par1Entity instanceof EntityLivingBase)
         {
-            ((EntityLivingBase) par1Entity).motionY += 3.0D;
+            ((EntityLivingBase) par1Entity).motionY += 4.0D;
         }
         
         return par1Entity.attackEntityFrom(DamageSource.causeMobDamage(this), (float) i);
     }
-	
+    
 	@Override
 	public void onLivingUpdate()
 	{
 		super.onLivingUpdate();
 		this.fallDistance = 0;
 	}
-
+	
+    /**
+     * Attack the specified entity using a ranged attack.
+     */
     @Override
     public void attackEntityWithRangedAttack(EntityLivingBase par1EntityLivingBase, float par2)
     {
@@ -54,7 +58,7 @@ public class EntityMinorDemonGruntWind extends EntityMinorDemonGrunt
         double xCoord;
         double yCoord;
         double zCoord;
-        WindGustProjectile hol = new WindGustProjectile(worldObj, this, par1EntityLivingBase, 1.8f, 0f, 15, 600);
+        WindGustProjectile hol = new WindGustProjectile(worldObj, this, par1EntityLivingBase, 1.8f, 0f, 20, 600);
         this.worldObj.spawnEntityInWorld(hol);
     }
 }

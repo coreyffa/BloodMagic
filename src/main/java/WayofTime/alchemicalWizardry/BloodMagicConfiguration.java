@@ -158,6 +158,8 @@ public class BloodMagicConfiguration
 		{
 			RenderHelper.xOffset = config.get("ClientSettings", "AlchemyHUDxOffset", 50).getInt();
 			RenderHelper.yOffset = config.get("ClientSettings", "AlchemyHUDyOffset", 2).getInt();
+			RenderHelper.lpBarX = config.get("ClientSettings", "LPHUDxOffset", 12).getInt();
+			RenderHelper.lpBarY = config.get("ClientSettings", "LPHUDyOffset", 75).getInt();
 		}
 
 		config.save();

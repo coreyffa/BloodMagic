@@ -79,6 +79,11 @@ import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.DemonPacketRe
 import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGrunt;
 import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntEarth;
 import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntFire;
+import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntGuardian;
+import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntGuardianEarth;
+import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntGuardianFire;
+import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntGuardianIce;
+import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntGuardianWind;
 import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntIce;
 import WayofTime.alchemicalWizardry.common.demonVillage.demonHoard.demon.EntityMinorDemonGruntWind;
 import WayofTime.alchemicalWizardry.common.demonVillage.loot.DemonVillageLootRegistry;
@@ -263,6 +268,8 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 @Mod(modid = "AWWayofTime", name = "AlchemicalWizardry", version = "v1.3.0Beta", guiFactory = "WayofTime.alchemicalWizardry.client.gui.ConfigGuiFactory")
 
@@ -407,7 +414,11 @@ public class AlchemicalWizardry
     public static String entityMinorDemonGruntWindID = "AW017";
     public static String entityMinorDemonGruntIceID = "AW018";
     public static String entityMinorDemonGruntEarthID = "AW019";
-
+	public static String entityMinorDemonGruntGuardianID = "AW020";
+	public static String entityMinorDemonGruntGuardianFireID = "AW021";
+	public static String entityMinorDemonGruntGuardianWindID = "AW022";
+	public static String entityMinorDemonGruntGuardianIceID = "AW023";
+	public static String entityMinorDemonGruntGuardianEarthID = "AW024";
 
     public static Fluid lifeEssenceFluid;
 
@@ -418,6 +429,7 @@ public class AlchemicalWizardry
     // Says where the client and server 'proxy' code is loaded.
     @SidedProxy(clientSide = "WayofTime.alchemicalWizardry.client.ClientProxy", serverSide = "WayofTime.alchemicalWizardry.common.CommonProxy")
     public static CommonProxy proxy;
+
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event)
@@ -870,6 +882,12 @@ public class AlchemicalWizardry
         EntityRegistry.registerModEntity(EntityMinorDemonGruntWind.class, "MinorDemonGruntWind", 36, this, 80, 3, true);
         EntityRegistry.registerModEntity(EntityMinorDemonGruntIce.class, "MinorDemonGruntIce", 37, this, 80, 3, true);
         EntityRegistry.registerModEntity(EntityMinorDemonGruntEarth.class, "MinorDemonGruntEarth", 38, this, 80, 3, true);
+        EntityRegistry.registerModEntity(EntityMinorDemonGruntGuardian.class, "MinorDemonGruntGuardian", 39, this, 80, 3, true);
+        EntityRegistry.registerModEntity(EntityMinorDemonGruntGuardianFire.class, "MinorDemonGruntGuardianFire", 40, this, 80, 3, true);
+        EntityRegistry.registerModEntity(EntityMinorDemonGruntGuardianWind.class, "MinorDemonGruntGuardianWind", 41, this, 80, 3, true);
+        EntityRegistry.registerModEntity(EntityMinorDemonGruntGuardianIce.class, "MinorDemonGruntGuardianIce", 42, this, 80, 3, true);
+        EntityRegistry.registerModEntity(EntityMinorDemonGruntGuardianEarth.class, "MinorDemonGruntGuardianEarth", 43, this, 80, 3, true);
+
 
 
         ChestGenHooks.getInfo(ChestGenHooks.DUNGEON_CHEST).addItem(new WeightedRandomChestContent(new ItemStack(ModItems.standardBindingAgent), 1, 3, this.standardBindingAgentDungeonChance / 5));
@@ -1135,8 +1153,10 @@ public class AlchemicalWizardry
 	    
 	    DemonVillageLootRegistry.init();
 	    
-	    if(parseTextFiles)
-	    	this.parseTextFile();
+//	    if(parseTextFiles)
+//	    	this.parseTextFile();
+	    
+	    this.createItemTextureFiles();
     }
 
     public static void initAlchemyPotionRecipes()
@@ -1368,6 +1388,76 @@ public class AlchemicalWizardry
     	CompressionRegistry.registerItemThreshold(new ItemStack(Blocks.cobblestone), 64);
     }
     
+    public void createItemTextureFiles()
+    {
+    	File textFiles = new File("config/BloodMagic/itemJsonFiles");
+    	
+    	File bmDirectory = new File("src/main/resources/assets/alchemicalwizardryJsonFiles");
+        if(!bmDirectory.exists())
+        {
+        	bmDirectory.mkdirs();
+        }
+
+        String[] itemStrings = new String[]{"apple", "apple"};
+        
+        String prefix = "alchemicalwizardry:items/";
+        
+        try
+        {
+        	for(int i=0; i<itemStrings.length; i+=2)
+        	{
+        		if(i+1 < itemStrings.length)
+        		{
+        			File file = new File(bmDirectory, itemStrings[i] + ".json");
+                    {
+                    	String[] strings = getGeneratedStrings(prefix + itemStrings[i + 1]);
+                    	PrintWriter writer = new PrintWriter(file);
+            			for(String stri : strings)
+            			{
+            				writer.println(stri);
+            			}
+            			writer.close();
+                    }
+        		}
+        		
+        	}
+        	
+        } catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        
+        
+    	
+    }
+    
+    public String[] getGeneratedStrings(String itemName)
+    {
+    	String[] strings = new String[18];
+    	
+    	strings[0] = "{";
+    	strings[1] = "    \"parent\": \"builtin/generated\",";
+    	strings[2] = "    \"textures\": {";
+    	strings[3] = "        \"layer0\": \"" + itemName + "\"";
+    	strings[4] = "    },";
+    	strings[5] = "    \"display\": {";
+    	strings[6] = "        \"thirdperson\": {";
+    	strings[7] = "            \"rotation\": [ -90, 0, 0 ],";
+    	strings[8] = "            \"translation\": [ 0, 1, -3 ],";
+    	strings[9] = "            \"scale\": [ 0.55, 0.55, 0.55 ]";
+    	strings[10] = "        },";
+    	strings[11] = "        \"firstperson\": {";
+    	strings[12] = "            \"rotation\": [ 0, -135, 25 ],";
+    	strings[13] = "            \"translation\": [ 0, 4, 2 ],";
+    	strings[14] = "            \"scale\": [ 1.7, 1.7, 1.7 ]";
+    	strings[15] = "        }";
+    	strings[16] = "    }";
+    	strings[17] = "}";
+    	
+    	return strings;
+    }
+    
+    @SideOnly(Side.CLIENT)
     public void parseTextFile()
     {
     	File textFiles = new File("config/BloodMagic/bookDocs");

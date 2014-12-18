@@ -1,24 +1,18 @@
 package WayofTime.alchemicalWizardry.common;
 
-import WayofTime.alchemicalWizardry.AlchemicalWizardry;
-import WayofTime.alchemicalWizardry.BloodMagicConfiguration;
-import WayofTime.alchemicalWizardry.common.entity.projectile.EnergyBlastProjectile;
-import WayofTime.alchemicalWizardry.common.items.BoundArmour;
-import WayofTime.alchemicalWizardry.common.spell.complex.effect.SpellHelper;
-import WayofTime.alchemicalWizardry.common.tileEntity.TEMasterStone;
-import cpw.mods.fml.client.event.ConfigChangedEvent;
-import cpw.mods.fml.common.ObfuscationReflectionHelper;
-import cpw.mods.fml.common.Optional;
-import cpw.mods.fml.common.eventhandler.Event.Result;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.monster.EntityCreeper;
 import net.minecraft.entity.monster.EntityMob;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.PlayerCapabilities;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.entity.projectile.EntityThrowable;
@@ -35,8 +29,20 @@ import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.living.LivingSpawnEvent.CheckSpawn;
 import vazkii.botania.api.internal.IManaBurst;
-
-import java.util.*;
+import WayofTime.alchemicalWizardry.AlchemicalWizardry;
+import WayofTime.alchemicalWizardry.BloodMagicConfiguration;
+import WayofTime.alchemicalWizardry.api.soulNetwork.SoulNetworkHandler;
+import WayofTime.alchemicalWizardry.common.entity.projectile.EnergyBlastProjectile;
+import WayofTime.alchemicalWizardry.common.items.BoundArmour;
+import WayofTime.alchemicalWizardry.common.spell.complex.effect.SpellHelper;
+import WayofTime.alchemicalWizardry.common.tileEntity.TEMasterStone;
+import cpw.mods.fml.client.event.ConfigChangedEvent;
+import cpw.mods.fml.common.ObfuscationReflectionHelper;
+import cpw.mods.fml.common.Optional;
+import cpw.mods.fml.common.eventhandler.Event.Result;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
 
 public class AlchemicalWizardryEventHooks
 {
@@ -175,6 +181,9 @@ public class AlchemicalWizardryEventHooks
 	@SubscribeEvent
 	public void onLivingJumpEvent(LivingJumpEvent event)
 	{
+//		event.entityLiving.getEntityAttribute(SharedMonsterAttributes.maxHealth).removeModifier(new AttributeModifier(new UUID(493295, 1), "HealthModifier", 2, 0));
+		//event.entityLiving.getEntityAttribute(SharedMonsterAttributes.maxHealth).applyModifier(new AttributeModifier(new UUID(493295, 1), "HealthModifier", 2, 0));
+
 		if (event.entityLiving.isPotionActive(AlchemicalWizardry.customPotionBoost))
 		{
 			int i = event.entityLiving.getActivePotionEffect(AlchemicalWizardry.customPotionBoost).getAmplifier();
@@ -227,12 +236,12 @@ public class AlchemicalWizardryEventHooks
 		}
 	}
 
-	//	@ForgeSubscribe
-	//	public void onFOVUpdate(FOVUpdateEvent event)
-	//	{
-	//		event.setResult(Result.DEFAULT);
-	//	}
-
+		
+//	@SubscribeEvent
+//	public void onFOVUpdate(FOVUpdateEvent event)
+//	{
+//		event.setResult(Result.DENY);
+//	}
 	//    @SubscribeEvent
 	//    public void onPlayerTickEnd(PlayerTickEvent event)
 	//    {
@@ -257,6 +266,14 @@ public class AlchemicalWizardryEventHooks
 
 		if (entityLiving instanceof EntityPlayer)
 		{
+			if(!entityLiving.worldObj.isRemote && entityLiving.worldObj.getTotalWorldTime() % 20 == 0)
+			{				
+				if(entityLiving instanceof EntityPlayerMP)
+				{
+					String ownerName = SoulNetworkHandler.getUsername((EntityPlayer)entityLiving);
+					NewPacketHandler.INSTANCE.sendTo(NewPacketHandler.getLPPacket(SoulNetworkHandler.getCurrentEssence(ownerName), SoulNetworkHandler.getMaximumForOrbTier(SoulNetworkHandler.getCurrentMaxOrb(ownerName))), (EntityPlayerMP)entityLiving);
+				}
+			}
 			ObfuscationReflectionHelper.setPrivateValue(PlayerCapabilities.class, ((EntityPlayer) event.entityLiving).capabilities, Float.valueOf(0.1f), new String[]{"walkSpeed", "g", "field_75097_g"});
 		}
 
@@ -294,6 +311,8 @@ public class AlchemicalWizardryEventHooks
 			}
 		}
 
+//		event.entityLiving.getEntityAttribute(SharedMonsterAttributes.movementSpeed).removeAllModifiers();
+		
 		if (event.entityLiving.isPotionActive(AlchemicalWizardry.customPotionBoost))
 		{
 			int i = event.entityLiving.getActivePotionEffect(AlchemicalWizardry.customPotionBoost).getAmplifier();
@@ -301,7 +320,11 @@ public class AlchemicalWizardryEventHooks
 			//if(!entity.isSneaking())
 			{
 				float percentIncrease = (i + 1) * 0.05f;
-
+				
+//				AttributeModifier speedModifier = new AttributeModifier(new UUID(213241, 3), "Potion Boost", percentIncrease, 0);
+//				
+//				event.entityLiving.getEntityAttribute(SharedMonsterAttributes.movementSpeed).applyModifier(speedModifier);
+				
 				if (event.entityLiving instanceof EntityPlayer)
 				{
 					EntityPlayer entityPlayer = (EntityPlayer) event.entityLiving;
